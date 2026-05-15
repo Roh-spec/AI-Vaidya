@@ -27,12 +27,16 @@ wheels/
 backend/temp_*.pdf
 backend/tmp/
 backend/vectorstore/
+backend/chroma_db/
+chroma_db/
 vectorstore/
 
 # Node / React
 frontend/node_modules/
 frontend/dist/
 frontend/build/
+node_modules/
+dist/
 .DS_Store
 
 # IDEs

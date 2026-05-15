@@ -1,97 +1,77 @@
-# AI Vaidya — Offline Document Q&A
+# AI Vaidya
 
-A fully offline, RAG-based question-answering system. Upload a PDF and ask questions — answers come **only** from your uploaded document, never from the model's training data.
+AI Vaidya is an Ayurveda study app with:
 
-## Architecture
+- `backend/`: FastAPI consultation API with PDF upload, Chroma persistence, and scripture-grounded question answering
+- `frontend/`: React + Vite + Tailwind UI with a dark Ayurveda consultation flow and a fully offline quiz mode
 
+## Project Layout
+
+```text
+ai-vaidya/
+├── backend/
+│   ├── main.py
+│   ├── quiz_generator.py
+│   ├── requirements.txt
+│   └── chroma_db/
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── api.js
+│   │   ├── index.css
+│   │   ├── components/
+│   │   │   ├── HomePage.jsx
+│   │   │   ├── ConsultationView.jsx
+│   │   │   └── QuizView.jsx
+│   │   └── utils/
+│   │       ├── pdfText.js
+│   │       ├── quizGenerator.js
+│   │       └── quizStorage.js
+│   └── vite.config.js
+└── .gitignore
 ```
-┌──────────┐     ┌─────────────────┐     ┌────────────────┐
-│ Frontend │────▶│  FastAPI Backend │────▶│  Ollama (phi3)  │
-│ (React)  │◀────│  :8000           │◀────│  :11434         │
-└──────────┘     └────────┬────────┘     └────────────────┘
-                          │
-                   ┌──────▼──────┐
-                   │  ChromaDB   │
-                   │ (vectorstore)│
-                   └─────────────┘
-```
 
-- **Generation + Embeddings** → Ollama phi3 (local)
-- **Vector Store** → ChromaDB (local files)
-- **Zero internet required**
+## Backend
 
----
+Use Python `3.11` or `3.12` in a virtual environment inside `backend/`.
 
-## Prerequisites (one-time setup, needs internet)
-
-### 1. Install Ollama
-Download from https://ollama.com/download/windows and install.
-
-### 2. Pull the phi3 model
 ```powershell
-& "C:\Users\hudge\AppData\Local\Programs\Ollama\ollama.exe" pull phi3
-```
-
-### 3. Install Python dependencies
-```powershell
-cd ai-vaidya
+cd backend
+py -3.11 -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 4. Install Frontend dependencies
+Backend URL: `http://localhost:8000`
+
+Expected backend behavior:
+
+- `POST /upload`: accepts PDF only, chunks with LangChain `RecursiveCharacterTextSplitter` using `1000/200`, replaces the Chroma index in `chroma_db/`
+- `POST /ask`: receives `{ question }`, retrieves top 3 chunks, answers using `google/flan-t5-base`
+- `POST /quiz/generate`: optional backend quiz endpoint
+
+## Frontend
+
 ```powershell
 cd frontend
 npm install
-```
-
----
-
-## Running Offline
-
-Ollama auto-starts as a background service on Windows, so you only need **2 terminals**:
-
-### Terminal 1 — Start Backend
-```powershell
-cd ai-vaidya\backend
-py -3 main.py
-```
-Backend runs on **http://localhost:8000**
-
-### Terminal 2 — Start Frontend
-```powershell
-cd ai-vaidya\frontend
 npm run dev
 ```
-Frontend runs on **http://localhost:5173**
 
-> **Note:** If Ollama is not running as a service, start it manually first:
-> ```powershell
-> & "C:\Users\hudge\AppData\Local\Programs\Ollama\ollama.exe" serve
-> ```
+Frontend URL: `http://localhost:5173`
 
----
+The Vite dev server proxies `/api` to `http://localhost:8000`.
 
-## Usage
+## Frontend Features
 
-1. Open **http://localhost:5173** in your browser
-2. **Upload a PDF** using the upload area
-3. **Ask questions** — the AI answers strictly from the uploaded document
-4. Use **Clear** to reset the document database
+- Home landing page with Ayurveda-themed visuals and direct entry points
+- Consultation mode that uses Axios and the backend API
+- Offline quiz mode that uses `pdfjs-dist` in the browser only
+- Local quiz persistence with replay and clear actions
 
----
+## Notes
 
-## Project Structure
-
-```
-ai-vaidya/
-├── backend/
-│   ├── main.py               # FastAPI server
-│   ├── generator.py           # Ollama-based answer generation
-│   ├── ingest.py              # PDF → chunks → ChromaDB
-│   ├── retriever.py           # Semantic search over chunks
-│   ├── ollama_embeddings.py   # Custom Ollama embedding class
-│   └── settings.py            # Configuration
-├── frontend/                  # React + Vite UI
-├── data/                      # PDF storage
-└── requirements.txt           # Python dependencies
-```
+- Consultation shows a clear backend-start message if the API is unreachable.
+- Quiz mode validates PDF input and handles empty or very short PDFs.
+- The frontend does not call the backend for quiz generation.
