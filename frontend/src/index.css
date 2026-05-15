@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #ecfdf5;
+  --color-brand-100: #d1fae5;
+  --color-brand-200: #a7f3d0;
+  --color-brand-300: #6ee7b7;
+  --color-brand-400: #34d399;
+  --color-brand-500: #10b981;
+  --color-brand-600: #059669;
+  --color-brand-700: #047857;
+  --color-brand-800: #065f46;
+  --color-brand-900: #064e3b;
+  --color-brand-950: #022c22;
+  
+  --color-bg-dark: #0a0e17;
+  --color-panel-dark: #111827;
+  --color-border-dark: #1f2937;
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-panel-dark/80 backdrop-blur-xl border border-border-dark/50 shadow-2xl;
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-300 to-brand-500;
+  }
+  .glow-effect {
+    @apply shadow-[0_0_15px_rgba(16,185,129,0.3)];
+  }
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-image: radial-gradient(circle at top right, rgba(16, 185, 129, 0.1), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Custom Scrollbar for Chat */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
