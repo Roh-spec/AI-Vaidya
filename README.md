@@ -1,47 +1,97 @@
-# 🌿 AI Vaidya - Ayurveda Q&A Assistant
+# AI Vaidya — Offline Document Q&A
 
-AI Vaidya is a completely local, privacy-first AI Assistant designed to answer questions about Ayurveda based exclusively on provided classical texts or documents.
-
-This project was built during the AI Fusion Challenge Hackathon.
+A fully offline, RAG-based question-answering system. Upload a PDF and ask questions — answers come **only** from your uploaded document, never from the model's training data.
 
 ## Architecture
 
-- **Frontend (`/frontend`)**: Modern React interface built with Vite and styled with Tailwind CSS v4. Features a dark-glassmorphic aesthetic.
-- **Backend (`/backend`)**: FastAPI application serving a REST API.
-- **AI Stack**: 100% local processing.
-  - Embeddings: `sentence-transformers` (`all-MiniLM-L6-v2`)
-  - Vector Store: `ChromaDB`
-  - Generation: HuggingFace `transformers` (`google/flan-t5-base`)
-
-## Prerequisites
-
-- Node.js (v18+)
-- Python (3.10+)
-
-## Setup & Running Locally
-
-You will need to run both the frontend and backend servers simultaneously.
-
-### 1. Start the Backend
-
-Open a terminal in the root directory:
-```bash
-cd backend
-pip install -r requirements.txt
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
-*(Note: On the first run, the AI models (~1GB total) will be downloaded automatically.)*
+┌──────────┐     ┌─────────────────┐     ┌────────────────┐
+│ Frontend │────▶│  FastAPI Backend │────▶│  Ollama (phi3)  │
+│ (React)  │◀────│  :8000           │◀────│  :11434         │
+└──────────┘     └────────┬────────┘     └────────────────┘
+                          │
+                   ┌──────▼──────┐
+                   │  ChromaDB   │
+                   │ (vectorstore)│
+                   └─────────────┘
+```
 
-### 2. Start the Frontend
+- **Generation + Embeddings** → Ollama phi3 (local)
+- **Vector Store** → ChromaDB (local files)
+- **Zero internet required**
 
-Open a second terminal in the root directory:
-```bash
+---
+
+## Prerequisites (one-time setup, needs internet)
+
+### 1. Install Ollama
+Download from https://ollama.com/download/windows and install.
+
+### 2. Pull the phi3 model
+```powershell
+& "C:\Users\hudge\AppData\Local\Programs\Ollama\ollama.exe" pull phi3
+```
+
+### 3. Install Python dependencies
+```powershell
+cd ai-vaidya
+pip install -r requirements.txt
+```
+
+### 4. Install Frontend dependencies
+```powershell
 cd frontend
 npm install
-npm run dev
 ```
 
-### 3. Usage
-- Navigate to `http://localhost:5173` in your browser.
-- Upload an Ayurveda PDF document to initialize the knowledge base.
-- Ask questions in the terminal chat window!
+---
+
+## Running Offline
+
+Ollama auto-starts as a background service on Windows, so you only need **2 terminals**:
+
+### Terminal 1 — Start Backend
+```powershell
+cd ai-vaidya\backend
+py -3 main.py
+```
+Backend runs on **http://localhost:8000**
+
+### Terminal 2 — Start Frontend
+```powershell
+cd ai-vaidya\frontend
+npm run dev
+```
+Frontend runs on **http://localhost:5173**
+
+> **Note:** If Ollama is not running as a service, start it manually first:
+> ```powershell
+> & "C:\Users\hudge\AppData\Local\Programs\Ollama\ollama.exe" serve
+> ```
+
+---
+
+## Usage
+
+1. Open **http://localhost:5173** in your browser
+2. **Upload a PDF** using the upload area
+3. **Ask questions** — the AI answers strictly from the uploaded document
+4. Use **Clear** to reset the document database
+
+---
+
+## Project Structure
+
+```
+ai-vaidya/
+├── backend/
+│   ├── main.py               # FastAPI server
+│   ├── generator.py           # Ollama-based answer generation
+│   ├── ingest.py              # PDF → chunks → ChromaDB
+│   ├── retriever.py           # Semantic search over chunks
+│   ├── ollama_embeddings.py   # Custom Ollama embedding class
+│   └── settings.py            # Configuration
+├── frontend/                  # React + Vite UI
+├── data/                      # PDF storage
+└── requirements.txt           # Python dependencies
+```

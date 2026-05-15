@@ -2,9 +2,9 @@ fastapi
 uvicorn
 python-multipart
 chromadb
-sentence-transformers
 PyMuPDF
 langchain
+langchain-core
 langchain-community
-transformers
-torch
+langchain-text-splitters
+requests

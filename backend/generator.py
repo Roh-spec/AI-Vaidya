@@ -1,58 +1,56 @@
-generator = None
-
-def _load_generator():
-    global generator
-    if generator is not None:
-        return
-    try:
-        from transformers import pipeline
-        # Try recommended seq2seq task first, fall back if unsupported
-        try:
-            generator = pipeline("text2text-generation", model="google/flan-t5-base")
-        except Exception:
-            generator = pipeline("text-generation", model="gpt2")
-    except Exception:
-        generator = None
+import requests
+from settings import OLLAMA_BASE_URL, OLLAMA_MODEL
 
 
 def generate_answer(question, chunks):
     """
-    Given a question and retrieved text chunks, generates an answer using local flan-t5-base.
+    Given a question and retrieved text chunks, generate an answer
+    using the local Ollama model via its REST API.
     """
     if not chunks:
         return "I could not find this in the text."
-        
-    context = "\n".join(chunks)
-    
-    prompt = f"""Answer the question using ONLY the context provided below.
-If the answer is not in the context, say "I could not find this in the text."
 
-Context:
+    context = "\n---\n".join(chunks)
+
+    prompt = f"""You are AI Vaidya, a helpful document Q&A assistant.
+
+Your task: Read the DOCUMENT EXCERPTS below and answer the user's QUESTION based on what you find.
+- Base your answer on the document excerpts provided.
+- If the excerpts contain relevant information, summarize and explain it clearly.
+- If the excerpts truly contain no relevant information at all, say "I could not find this in the provided document."
+
+DOCUMENT EXCERPTS:
 {context}
 
-Question: {question}
-Answer:"""
+QUESTION: {question}
 
-    # Ensure generator is loaded; if not available, return a safe fallback
-    _load_generator()
-    if generator is None:
-        # Simple fallback: return a concise extract from context
-        return context[:1000] + ("..." if len(context) > 1000 else "")
+ANSWER:"""
 
     try:
-        result = generator(prompt, max_length=512, num_return_sequences=1)
-        
-        # Extract the generated text
-        if isinstance(result, list) and isinstance(result[0], dict):
-            answer = result[0].get('generated_text') or result[0].get('text') or str(result[0])
-        else:
-            answer = str(result)
-            
-        # If the model echoes the prompt (e.g., text-generation pipeline), strip it out
-        if answer.startswith(prompt):
-            answer = answer[len(prompt):].strip()
-            
-        return answer
+        response = requests.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.4,
+                    "num_predict": 512,
+                },
+            },
+            timeout=120,
+        )
+        response.raise_for_status()
+        data = response.json()
+        answer = data.get("response", "").strip()
+        return answer if answer else "I could not generate an answer."
+    except requests.ConnectionError:
+        return (
+            "Could not connect to Ollama. "
+            "Make sure Ollama is running (ollama serve)."
+        )
+    except requests.Timeout:
+        return "The model took too long to respond. Please try again."
     except Exception as e:
         print(f"Generation error: {e}")
         return "Sorry, I encountered an error while generating the answer."

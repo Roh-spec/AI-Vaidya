@@ -1,18 +1,27 @@
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
-import os
+from ollama_embeddings import OllamaEmbeddings
+from settings import VECTORSTORE_DIR
 
-def retrieve_chunks(question, top_k=3):
+embeddings = None
+
+
+def _get_embeddings():
+    global embeddings
+    if embeddings is None:
+        embeddings = OllamaEmbeddings()
+    return embeddings
+
+def retrieve_chunks(question, top_k=6):
     """
     Given a question, returns the top_k most relevant chunks from ChromaDB.
+    Uses top_k=6 to give the model more context to work with.
     """
-    if not os.path.exists("./vectorstore"):
+    if not VECTORSTORE_DIR.exists():
         return []
-        
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
     vectorstore = Chroma(
-        persist_directory="./vectorstore",
-        embedding_function=embeddings,
+        persist_directory=str(VECTORSTORE_DIR),
+        embedding_function=_get_embeddings(),
         collection_name="ayurveda_docs"
     )
     

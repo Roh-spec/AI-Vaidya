@@ -25,6 +25,7 @@ wheels/
 
 # FastAPI / AI Vaidya specifics
 backend/temp_*.pdf
+backend/tmp/
 backend/vectorstore/
 vectorstore/
 
