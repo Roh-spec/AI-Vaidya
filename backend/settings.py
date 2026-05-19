@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -8,9 +11,11 @@ DATA_DIR = PROJECT_DIR / "data"
 VECTORSTORE_DIR = BASE_DIR / "vectorstore"
 TEMP_DIR = BASE_DIR / "tmp"
 
-# --- Ollama settings (generation + embeddings, fully offline) ---
-OLLAMA_BASE_URL = os.getenv("AI_VAIDYA_OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("AI_VAIDYA_OLLAMA_MODEL", "phi3")
+# --- NVIDIA NIM API Settings ---
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+NVIDIA_LLM_MODEL = "meta/llama-3.1-70b-instruct"
+NVIDIA_EMBEDDING_MODEL = "nvidia/nv-embedqa-e5-v5"
 
 
 def ensure_runtime_dirs():

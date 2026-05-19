@@ -1,11 +1,12 @@
-import requests
-from settings import OLLAMA_BASE_URL, OLLAMA_MODEL
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage
+from settings import NVIDIA_API_KEY, NVIDIA_BASE_URL, NVIDIA_LLM_MODEL
 
 
 def generate_answer(question, chunks):
     """
     Given a question and retrieved text chunks, generate an answer
-    using the local Ollama model via its REST API.
+    using the NVIDIA NIM API (Llama 3.1 70B) via LangChain's ChatOpenAI interface.
     """
     if not chunks:
         return "I could not find this in the text."
@@ -22,35 +23,26 @@ Your task: Read the DOCUMENT EXCERPTS below and answer the user's QUESTION based
 DOCUMENT EXCERPTS:
 {context}
 
-QUESTION: {question}
-
-ANSWER:"""
+QUESTION: {question}"""
 
     try:
-        response = requests.post(
-            f"{OLLAMA_BASE_URL}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.4,
-                    "num_predict": 512,
-                },
-            },
-            timeout=120,
+        # We use ChatOpenAI pointing to the NVIDIA base URL
+        chat = ChatOpenAI(
+            api_key=NVIDIA_API_KEY,
+            base_url=NVIDIA_BASE_URL,
+            model=NVIDIA_LLM_MODEL,
+            temperature=0.4,
+            max_tokens=512,
         )
-        response.raise_for_status()
-        data = response.json()
-        answer = data.get("response", "").strip()
+        
+        messages = [
+            SystemMessage(content="You are a helpful assistant."),
+            HumanMessage(content=prompt)
+        ]
+        
+        response = chat.invoke(messages)
+        answer = response.content.strip()
         return answer if answer else "I could not generate an answer."
-    except requests.ConnectionError:
-        return (
-            "Could not connect to Ollama. "
-            "Make sure Ollama is running (ollama serve)."
-        )
-    except requests.Timeout:
-        return "The model took too long to respond. Please try again."
     except Exception as e:
         print(f"Generation error: {e}")
-        return "Sorry, I encountered an error while generating the answer."
+        return "Sorry, I encountered an error while generating the answer. Make sure your NVIDIA_API_KEY is correct."

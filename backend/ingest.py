@@ -1,8 +1,9 @@
 import fitz  # PyMuPDF
+import shutil
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from ollama_embeddings import OllamaEmbeddings
-from settings import VECTORSTORE_DIR
+from langchain_openai import OpenAIEmbeddings
+from settings import VECTORSTORE_DIR, NVIDIA_API_KEY, NVIDIA_BASE_URL, NVIDIA_EMBEDDING_MODEL
 
 def process_and_store_pdf(file_path: str):
     """
@@ -16,6 +17,10 @@ def process_and_store_pdf(file_path: str):
         text += page.get_text()
     
     doc.close()
+
+    text = text.strip()
+    if not text:
+        raise ValueError("The PDF does not contain readable text.")
         
     print("Splitting into chunks...")
     text_splitter = RecursiveCharacterTextSplitter(
@@ -23,10 +28,25 @@ def process_and_store_pdf(file_path: str):
         chunk_overlap=200,
         length_function=len
     )
-    chunks = text_splitter.split_text(text)
+    chunks = [
+        chunk.strip()
+        for chunk in text_splitter.split_text(text)
+        if chunk and chunk.strip()
+    ]
+
+    if not chunks:
+        raise ValueError("No valid text chunks could be created from the PDF.")
     
-    print(f"Embedding {len(chunks)} chunks using Ollama...")
-    embeddings = OllamaEmbeddings()
+    print(f"Embedding {len(chunks)} chunks using NVIDIA NIM API...")
+    embeddings = OpenAIEmbeddings(
+        api_key=NVIDIA_API_KEY,
+        base_url=NVIDIA_BASE_URL,
+        model=NVIDIA_EMBEDDING_MODEL,
+        check_embedding_ctx_length=False
+    )
+
+    if VECTORSTORE_DIR.exists():
+        shutil.rmtree(VECTORSTORE_DIR)
     
     vectorstore = Chroma.from_texts(
         texts=chunks, 

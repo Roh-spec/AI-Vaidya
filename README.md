@@ -10,10 +10,12 @@ AI Vaidya is an Ayurveda study app with:
 ```text
 ai-vaidya/
 ├── backend/
+│   ├── generator.py
+│   ├── ingest.py
 │   ├── main.py
-│   ├── quiz_generator.py
-│   ├── requirements.txt
-│   └── chroma_db/
+│   ├── retriever.py
+│   ├── settings.py
+│   └── vectorstore/
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx
@@ -28,7 +30,9 @@ ai-vaidya/
 │   │       ├── quizGenerator.js
 │   │       └── quizStorage.js
 │   └── vite.config.js
-└── .gitignore
+├── .gitignore
+├── .env
+└── requirements.txt
 ```
 
 ## Backend
@@ -39,7 +43,7 @@ Use Python `3.11` or `3.12` in a virtual environment inside `backend/`.
 cd backend
 py -3.11 -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r ../requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -47,7 +51,7 @@ Backend URL: `http://localhost:8000`
 
 Expected backend behavior:
 
-- `POST /upload`: accepts PDF only, chunks with LangChain `RecursiveCharacterTextSplitter` using `1000/200`, replaces the Chroma index in `chroma_db/`
+- `POST /upload`: accepts PDF only, chunks with LangChain `RecursiveCharacterTextSplitter` using `1000/200`, replaces the Chroma index in `vectorstore/`
 - `POST /ask`: receives `{ question }`, retrieves top 3 chunks, answers using `google/flan-t5-base`
 - `POST /quiz/generate`: optional backend quiz endpoint
 

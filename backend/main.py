@@ -9,8 +9,8 @@ from ingest import process_and_store_pdf, clear_database
 from retriever import retrieve_chunks
 from generator import generate_answer
 from settings import (
-    OLLAMA_BASE_URL,
-    OLLAMA_MODEL,
+    NVIDIA_LLM_MODEL,
+    NVIDIA_EMBEDDING_MODEL,
     TEMP_DIR,
     ensure_runtime_dirs,
 )
@@ -33,21 +33,11 @@ class QuestionRequest(BaseModel):
 
 @app.get("/health")
 def health_check():
-    import requests
-    ollama_ok = False
-    try:
-        r = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3)
-        ollama_ok = r.status_code == 200
-    except Exception:
-        pass
-
     return {
         "status": "ok",
-        "message": "AI Vaidya backend is running (fully offline)",
-        "generator": f"Ollama ({OLLAMA_MODEL})",
-        "embeddings": f"Ollama ({OLLAMA_MODEL})",
-        "ollama_url": OLLAMA_BASE_URL,
-        "ollama_connected": ollama_ok,
+        "message": "AI Vaidya backend is running (API mode)",
+        "generator": NVIDIA_LLM_MODEL,
+        "embeddings": NVIDIA_EMBEDDING_MODEL,
     }
 
 @app.post("/upload")
